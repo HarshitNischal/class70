@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, Image } from 'react-native';
 import {createAppContainer,createSwitchNavigator} from "react-navigation" ;
 import {createBottomTabNavigator} from "react-navigation-tabs";
 import SearchScreen from "./screen/searchScreen";
-import TranscationScreen from "./screen/transactionScreen";
+import TransactionScreen from "./screen/transactionScreen";
 
 export default function App() {
   return (
@@ -13,7 +13,7 @@ export default function App() {
 }
 var TabNavigator=createBottomTabNavigator({
 Search:{screen:SearchScreen},
-Transcation:{screen:TranscationScreen}
+Transaction:{screen:TransactionScreen}
 },
 {defaultNavigationOptions:({navigation})=>{
   tabBarIcon:()=>{
@@ -22,8 +22,8 @@ Transcation:{screen:TranscationScreen}
       return(
         <Image
         source={require('./assets/book.png')}
-        style={{width:40,
-        hieght:40}}
+        style={{width:20,
+        height:20}}
         />
       )
     }
@@ -31,8 +31,8 @@ Transcation:{screen:TranscationScreen}
       return(
         <Image
         source={require('./assets/searchingbook.png')}
-        style={{width:40,
-          hieght:40}}
+        style={{width:100,
+          height:100}}
         />
       )
     }
