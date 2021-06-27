@@ -28,25 +28,114 @@ export default class transactionScreen extends Component{
         })                
     }
     handleTransaction=async()=>{
-        var tMessage=null
-        db.collection('books').doc(this.state.scannedBookID).get()
-        .then((doc)=>{
-        var book=doc.data()
-        if(book.bookAvail){
-            this.initiateBookIssue()
-            tMessage="Book Issue"
-            ToastAndroid.show(tMessage,ToastAndroid.SHORT)
-        }
-      else  {
-          this.initiateBookReturn()
-        tMessage="Book Return"
-        ToastAndroid.show(tMessage,ToastAndroid.SHORT)
-    }
-        })
+      //verify if the student is eligible for book return or book issue or non
+      //student ID exist in the database
+      //issue:no. of books issue < 2
+      //issue:verify book avalibility 
+      //return:last transaction book issued by the student ID
+    var transactionType=await this.checkBookEligibility();
+    if(!transactionType)//return false then only execute statement
+    {
+        alert('The Book Does not Exist In The Library Database')
         this.setState({
-            transactionMessage:tMessage
+            scannedBookID:'',
+            scannedStudentID:'',
+
         })
     }
+    else if(transactionType='issue'){
+        var isStudentEligible=await this.checkStudentEligibilityForBookIssue();
+        if(isStudentEligible){
+            this.initiateBookIssue();
+            alert('Book Issued To the Student.')
+        }
+    }
+    else{  
+         isStudentEligible=await this.checkStudentEligibilityForBookReturn();
+        if(isStudentEligible){
+            this.initiateBookReturn();
+            alert('Book Returned To the Library.')
+        }}
+    }
+checkBookEligibility=async()=>{
+    const bookRef=await db.collection('book').where('bookID','==',this.state.scannedBookID).get();
+    var transactionType=''
+    //if feeded book ID does not match with any database Book ID
+    //the query will return a list of document in an eray 
+    if(bookRef.docs.length===0){
+        transactionType='false'
+    }
+    //if feeded book ID match with any database Book ID
+    else{
+        //we can map over the eray element(idoly,would be only one element since each book ID is unique)
+        bookRef.docs.map(doc=>{
+            var book=doc.data();
+            if(book.bookAvail){
+                transactionType='issue'
+            }
+            else{
+                transactionType='return'
+            }
+        })
+    }
+    return transactionType
+}
+checkStudentEligibilityForBookIssue=async()=>{
+    const studentRef=await db.collection('student').where('studentID','==',this.state.scannedStudentID).get();
+    var isStudentEligible=''
+    //if feeded book ID does not match with any database Book ID
+    //the query will return a list of document in an eray 
+    if(studentRef.docs.length===0){
+        this.setState({
+            scannedBookID:'',
+            scannedStudentID:'',
+        })
+        isStudentEligible='false'
+        alert('Student ID does not exist in the Databse') 
+    }
+    //if feeded book ID match with any database Book ID
+    else{
+        //we can map over the eray element(idoly,would be only one element since each book ID is unique)
+        studentRef.docs.map(doc=>{
+            var student=doc.data();
+            if(student.numberOfBooks<2){
+                isStudentEligible='true'
+            }
+            else{
+                isStudentEligible='false'
+                this.setState({
+                    scannedBookID:'',
+                    scannedStudentID:'',
+                })
+                alert('Student Already have 2 Books Issued')
+            }
+        })
+    }
+    return isStudentEligible
+}
+checkStudentEligibilityForBookReturn=async()=>{
+    const transactionRef=await db.collection('transaction').where('bookID','==',this.state.scannedbookID).limit(1).get();
+    var isStudentEligible=''
+    //if feeded book ID does not match with any database Book ID
+    //the query will return a list of document in an eray 
+   
+        transactionRef.docs.map(doc=>{
+            var lastBookTransaction=doc.data();
+            if(lastBookTransaction.studentID=this.state.scannedStudentID){
+                isStudentEligible='true'
+            }
+            else{
+                isStudentEligible='false'
+                alert('The Book Was Not Issued By this Student')
+                this.setState({
+                    scannedBookID:'',
+                    scannedStudentID:'',
+                })
+            }
+        })
+    
+    return isStudentEligible
+}
     initiateBookIssue=async()=>{
         //add transaction
         db.collection('transaction').add({
